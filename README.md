@@ -17,6 +17,12 @@ With this enhancement, the `overlayImage` parameter has been introduced to the `
 
 This modification extends the versatility of the package, empowering developers to create more immersive and customized user experiences within their applications.
 
+**_WITHOUT OVERLAY_**
+
+![My Image](assets/screenshot2.jpeg)
+
+**_WITH OVERLAY_**
+
 ![My Image](assets/screenshot.jpeg)
 
 ## Features
@@ -37,10 +43,10 @@ Integrate the package by following these simple steps:
 
 ```dart
 // Example usage of My Image Cropper View
-Uint8List? result = await MyImageCropperView.cropImage(
+Uint8List? result = await ImageCropperView.cropImage(
   context: context,
   image: Image.file(imageFile),
   clipShape: ClipShape.circle,
-  overlayImage: Image.asset("assets/smile.png"),
+  overlayImage: Image.asset("assets/smile.png"), // Optional overlay property
 );
 ```
