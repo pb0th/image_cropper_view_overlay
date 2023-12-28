@@ -43,7 +43,7 @@ Integrate the package by following these simple steps:
 
 ```dart
 // Example usage of My Image Cropper View
-Uint8List? result = await ImageCropperView.cropImage(
+Uint8List? result = await ImageCropperViewOverlay.cropImage(
   context: context,
   image: Image.file(imageFile),
   clipShape: ClipShape.circle,
