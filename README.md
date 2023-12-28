@@ -1,4 +1,4 @@
-# My Image Cropper View (Working Title)
+# My Image Cropper View
 
 **This Flutter package is a fork of the `image_cropper_view` package. I modified the original package to add an overlay image feature to suit my needs. All credits belong to the original owner.**
 
