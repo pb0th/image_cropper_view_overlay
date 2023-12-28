@@ -1,24 +1,24 @@
-library image_crop_view;
-
 import 'dart:async';
-import 'dart:math' as math;
+
 import 'dart:ui' as ui;
-import 'dart:typed_data' show ByteData;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'clipper.dart';
+import 'dart:math' as math;
 
-class ImageCropper extends StatefulWidget {
-  const ImageCropper({
+class Cropper extends StatefulWidget {
+  const Cropper({
     Key? key,
     required this.image,
-    this.fit = BoxFit.cover,
-    this.exportSize = const Size(500, 500),
+    this.overlayImage,
+    required this.fit,
+    required this.exportSize,
     this.exportBackgroundColor,
-    this.clipShape = ClipShape.circle,
-    this.clipImage = false,
-    this.clipRRectRadius = const Radius.circular(10),
+    required this.clipShape,
+    required this.clipImage,
+    required this.clipRRectRadius,
   }) : super(key: key);
-
+  final Image? overlayImage;
   final Image image;
   final Size exportSize;
   final BoxFit fit;
@@ -28,10 +28,10 @@ class ImageCropper extends StatefulWidget {
   final Radius clipRRectRadius;
 
   @override
-  State<ImageCropper> createState() => _ImageCropperState();
+  State<Cropper> createState() => _CropperState();
 }
 
-class _ImageCropperState extends State<ImageCropper> {
+class _CropperState extends State<Cropper> {
   Matrix4 sessionMatrix = Matrix4.identity();
   Matrix4 matrix = Matrix4.identity();
   ui.Image? bitImage;
@@ -42,7 +42,7 @@ class _ImageCropperState extends State<ImageCropper> {
   @override
   initState() {
     super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       loadImage();
     });
   }
@@ -76,31 +76,36 @@ class _ImageCropperState extends State<ImageCropper> {
     this.txMatrix = txMatrix;
 
     var clipExportRatio = clipSize.width / widget.exportSize.width;
-    return Stack(
-      fit: StackFit.expand,
-      alignment: Alignment.topLeft,
-      children: [
-        Positioned(
-          left: viewSize.width / 2,
-          top: viewSize.height / 2,
-          child: Transform(
-            transform: txMatrix,
-            alignment: Alignment.topLeft,
-            child: widget.image,
+    return SafeArea(
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.topLeft,
+        children: [
+          Positioned(
+            left: viewSize.width / 2,
+            top: viewSize.height / 2,
+            child: Transform(
+              transform: txMatrix,
+              alignment: Alignment.topLeft,
+              child: widget.image,
+            ),
           ),
-        ),
-        // black overlay on image
-        ClipPath(
-          clipper: InvertedClipper(
-            clipSize: clipSize,
-            shape: widget.clipShape,
-            rrectRadius: widget.clipRRectRadius * clipExportRatio,
+          Center(
+            child: widget.overlayImage,
           ),
-          child: Container(
-            color: Colors.black54,
+          // black overlay on image
+          ClipPath(
+            clipper: InvertedClipper(
+              clipSize: clipSize,
+              shape: widget.clipShape,
+              rrectRadius: widget.clipRRectRadius * clipExportRatio,
+            ),
+            child: Container(
+              color: Colors.black54,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -142,17 +147,30 @@ class _ImageCropperState extends State<ImageCropper> {
   }
 
   _onScaleUpdate(ScaleUpdateDetails d) {
-    var center = context.size!.center(Offset.zero);
-    var focal = d.localFocalPoint.translate(-center.dx, -center.dy);
-    var focalDelta = d.focalPoint - initialFocalPoint;
-    setState(() {
-      sessionMatrix = Matrix4.identity()
+    try {
+      var center = context.size!.center(Offset.zero);
+      var focal = d.localFocalPoint.translate(-center.dx, -center.dy);
+      var focalDelta = d.focalPoint - initialFocalPoint;
+
+      Matrix4 tempSessionMatrix = Matrix4.identity()
         ..translate(focal.dx, focal.dy)
         ..scale(d.scale)
-        ..rotateZ(d.rotation)
+        // ..rotateZ(d.rotation)
         ..translate(focalDelta.dx, focalDelta.dy)
         ..translate(-focal.dx, -focal.dy);
-    });
+
+      Matrix4 tempMatrix = matrix * tempSessionMatrix;
+      double? newScale = tempMatrix.getMaxScaleOnAxis() >= 0.9 ? d.scale : null;
+      // print(focal.dx);
+      setState(() {
+        sessionMatrix = Matrix4.identity()
+          ..translate(focal.dx, focal.dy)
+          ..scale(newScale)
+          // ..rotateZ(d.rotation)
+          ..translate(focalDelta.dx, focalDelta.dy)
+          ..translate(-focal.dx, -focal.dy);
+      });
+    } catch (e) {}
   }
 
   _onScaleEnd(ScaleEndDetails d) {
@@ -163,7 +181,7 @@ class _ImageCropperState extends State<ImageCropper> {
     });
   }
 
-  Future<ByteData?> _exportImage() async {
+  Future<Uint8List?> _exportImage() async {
     if (bitImage == null || clipSize == null || txMatrix == null) {
       throw 'Image cannot be loaded';
     }
@@ -219,8 +237,9 @@ class _ImageCropperState extends State<ImageCropper> {
           exportSize.width.floor(),
           exportSize.height.floor(),
         );
-    var buf = await img.toByteData(format: ui.ImageByteFormat.png);
-    return buf;
+    ByteData? byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+    Uint8List? result = byteData?.buffer.asUint8List();
+    return result;
   }
 
   Widget _buildClipper(BuildContext context) {
@@ -276,11 +295,12 @@ class _ImageCropperState extends State<ImageCropper> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: imageView,
       bottomNavigationBar: Container(
-        color: Colors.white,
+        color: Colors.black,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -288,48 +308,56 @@ class _ImageCropperState extends State<ImageCropper> {
                 child: const Text('Cancel'),
                 onPressed: _cancelEdit,
               ),
+              // IconButton(
+              //   tooltip: 'Horizontal flip',
+              //   onPressed: _hFlipImage,
+              //   icon: const Icon(Icons.flip),
+              // ),
+              // IconButton(
+              //   tooltip: 'Vertical flip',
+              //   onPressed: _vFlipImage,
+              //   icon: const RotatedBox(
+              //     quarterTurns: 1,
+              //     child: Icon(Icons.flip_rounded),
+              //   ),
+              // ),
               IconButton(
-                tooltip: 'Horizontal flip',
-                onPressed: _hFlipImage,
-                icon: const Icon(Icons.flip),
-              ),
-              IconButton(
-                tooltip: 'Vertical flip',
-                onPressed: _vFlipImage,
-                icon: const RotatedBox(
-                  quarterTurns: 1,
-                  child: Icon(Icons.flip_rounded),
+                tooltip: 'Rotate right',
+                onPressed: () => _rotateImage(-math.pi / 2),
+                icon: const Icon(
+                  Icons.rotate_90_degrees_ccw,
+                  color: Colors.white,
                 ),
               ),
               IconButton(
                 tooltip: 'Rotate left',
                 onPressed: () => _rotateImage(math.pi / 2),
-                icon: const Icon(Icons.rotate_90_degrees_ccw),
-              ),
-              IconButton(
-                tooltip: 'Rotate right',
-                onPressed: () => _rotateImage(-math.pi / 2),
                 icon: Transform(
                   alignment: Alignment.center,
                   transform: Matrix4.identity()..scale(-1.0, 1.0),
-                  child: const Icon(Icons.rotate_90_degrees_ccw),
+                  child: const Icon(
+                    Icons.rotate_90_degrees_ccw,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Rotate',
-                onPressed: () {},
-                icon: const Icon(Icons.rotate_right),
-              ),
-              IconButton(
-                tooltip: 'Zoom',
-                onPressed: () {},
-                icon: const Icon(Icons.zoom_in),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.save),
-                label: const Text('Save'),
-                onPressed: _saveEdit,
-              ),
+
+              // IconButton(
+              //   tooltip: 'Rotate',
+              //   onPressed: () {},
+              //   icon: const Icon(Icons.rotate_right),
+              // ),
+              // IconButton(
+              //   tooltip: 'Zoom',
+              //   onPressed: () {},
+              //   icon: const Icon(Icons.zoom_in),
+              // ),
+              TextButton(
+                  onPressed: _saveEdit,
+                  child: const Text(
+                    "Save",
+                    style: TextStyle(color: Colors.amber, fontSize: 16),
+                  ))
             ],
           ),
         ),
