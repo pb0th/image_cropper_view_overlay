@@ -1,6 +1,6 @@
 name: image_cropper_view_overlay
 description: A widget to crop your images. It supports pan, zoom, rotate gestures.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/pb0th/image_cropper_view
 
 environment:
