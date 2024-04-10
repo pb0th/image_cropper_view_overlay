@@ -10,7 +10,7 @@ class Cropper extends StatefulWidget {
   const Cropper({
     Key? key,
     required this.image,
-    this.overlayImage,
+    this.overlayWidget,
     required this.fit,
     required this.exportSize,
     this.exportBackgroundColor,
@@ -18,7 +18,7 @@ class Cropper extends StatefulWidget {
     required this.clipImage,
     required this.clipRRectRadius,
   }) : super(key: key);
-  final Image? overlayImage;
+  final Widget? overlayWidget;
   final Image image;
   final Size exportSize;
   final BoxFit fit;
@@ -90,9 +90,10 @@ class _CropperState extends State<Cropper> {
               child: widget.image,
             ),
           ),
-          Center(
-            child: widget.overlayImage,
-          ),
+          // Center(
+          //   child: widget.overlayImage,
+          // ),
+
           // black overlay on image
           ClipPath(
             clipper: InvertedClipper(
@@ -103,6 +104,14 @@ class _CropperState extends State<Cropper> {
             child: Container(
               color: Colors.black54,
             ),
+          ),
+
+          Center(
+            child: Container(
+                  width: clipSize.width * 0.7,
+                  child: widget.overlayWidget,
+                ) ??
+                SizedBox(),
           ),
         ],
       ),
