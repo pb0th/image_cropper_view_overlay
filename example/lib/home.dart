@@ -29,11 +29,63 @@ class _HomeScreenState extends State<HomeScreen> {
               context: context,
               image: Image.file(imageFile),
               clipShape: ClipShape.circle,
-              overlayImage: Image.asset(
-                "assets/crop_avatar.png",
-                fit: BoxFit.contain,
-                width: MediaQuery.of(context).size.width * 0.8,
-              ));
+              overlayWidget: Container(
+                height: MediaQuery.of(context).size.width * 0.75,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          color: Colors.white,
+                          padding: EdgeInsets.all(3),
+                          child: const Text(
+                            "頭の頂点",
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 10),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Container(
+                          color: Colors.orange,
+                          height: 5,
+                          width: double.infinity,
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Container(
+                          color: Colors.orange,
+                          height: 5,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Container(
+                          color: Colors.white,
+                          padding: EdgeInsets.all(3),
+                          child: const Text(
+                            "あご先",
+                            style:
+                                TextStyle(color: Colors.orange, fontSize: 10),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+              // overlayWidget: Image.asset(
+              //   "assets/crop_avatar.png",
+              //   fit: BoxFit.contain,
+              //   width: MediaQuery.of(context).size.width * 0.8,
+              // )
+
+              );
 
           if (result != null) {
             setState(() {
